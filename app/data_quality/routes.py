@@ -10,6 +10,7 @@ import logging
 
 from ..database.config import get_db
 from ..database.models import User, Project, DataProfile, Job, JobStatus
+from ..auth.dependencies import get_current_verified_user
 from .schemas import (
     DataUploadRequest, DataAnalysisRequest, DataCleaningRequest,
     DataProfileResponse, DataCleaningResult, JobStatusResponse, DataQualityReport
@@ -24,16 +25,7 @@ logger = logging.getLogger(__name__)
 analyzer = DataQualityAnalyzer()
 cleaner = DataCleaner()
 
-# Temporary mock user for testing (replace when auth is implemented)
-class MockUser:
-    def __init__(self):
-        self.id = 1
-        self.email = "test@example.com"
-        self.username = "testuser"
-
-def get_current_user():
-    """Temporary mock user function - replace with real authentication"""
-    return MockUser()
+# Use Firebase authentication
 
 
 @router.post("/upload", response_model=Dict[str, Any])
@@ -45,7 +37,7 @@ async def upload_data_file(
     encoding: str = Form("utf-8"),
     has_header: bool = Form(True),
     sample_rows: Optional[int] = Form(1000),
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Upload and process data file for quality analysis"""
@@ -187,7 +179,7 @@ async def upload_data_file(
 @router.post("/analyze", response_model=Dict[str, str])
 async def analyze_data_quality(
     request: DataAnalysisRequest,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Start comprehensive data quality analysis"""
@@ -252,7 +244,7 @@ async def analyze_data_quality(
 @router.get("/recent-uploads", response_model=List[Dict[str, Any]])
 async def get_recent_uploads(
     limit: int = 10,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Get recent file uploads for the current user"""
@@ -319,7 +311,7 @@ async def get_recent_uploads(
 @router.get("/quality-summary/{data_profile_id}", response_model=Dict[str, Any])
 async def get_quality_summary(
     data_profile_id: int,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Get quality assessment summary for a data profile"""
@@ -431,7 +423,7 @@ async def get_quality_summary(
 @router.post("/clean", response_model=Dict[str, Any])
 async def start_data_cleaning(
     request: DataCleaningRequest,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Start data cleaning process"""
@@ -496,7 +488,7 @@ async def start_data_cleaning(
 @router.get("/status/{job_id}", response_model=JobStatusResponse)
 async def get_job_status(
     job_id: str,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Get job status and progress"""
@@ -539,7 +531,7 @@ async def get_job_status(
 async def get_issue_details(
     data_profile_id: int,
     issue_type: str,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Get detailed information about specific issue type"""
@@ -657,7 +649,7 @@ async def get_issue_details(
 @router.get("/validation-results/{data_profile_id}", response_model=Dict[str, Any])
 async def get_validation_results(
     data_profile_id: int,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Get validation results showing before/after cleaning comparison"""
@@ -1155,7 +1147,7 @@ async def _run_data_cleaning(data_profile_id: int, job_id: str, request: DataCle
 @router.get("/export-cleaned-data/{data_profile_id}")
 async def export_cleaned_data(
     data_profile_id: int,
-    current_user: MockUser = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Export cleaned data as CSV file"""

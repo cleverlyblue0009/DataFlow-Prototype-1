@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 # Fixed imports with error handling
 try:
     from .database.config import create_tables, settings
-    from .database.models import *  # Import all models to ensure they're registered
+    from .database import get_db, User, Job
+    from .auth.dependencies import get_current_verified_user
 except ImportError as e:
     print(f"Database import error: {e}")
     # Create mock settings for development
@@ -24,6 +25,10 @@ except ImportError as e:
     settings = MockSettings()
     def create_tables():
         pass
+    def get_db():
+        return None
+    def get_current_verified_user():
+        return {"id": "dev-user", "email": "dev@example.com"}
 
 # Import routers with error handling
 try:
@@ -348,20 +353,11 @@ app.include_router(data_quality_router)
 app.include_router(dashboard_router)
 app.include_router(migration_router)
 
-# Mock dependencies for development
-def get_current_verified_user():
-    """Mock user for development"""
-    return {"id": "dev-user", "email": "dev@example.com"}
-
-def get_db():
-    """Mock database session for development"""
-    return None
-
-# Add jobs endpoint to main API - simplified version
+# Add jobs endpoint to main API
 @app.get("/api/jobs/{job_id}/status")
 async def get_job_status_with_auth(
     job_id: str,
-    current_user: dict = Depends(get_current_verified_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Get job status and results - simplified version"""
