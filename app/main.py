@@ -357,7 +357,7 @@ app.include_router(migration_router)
 @app.get("/api/jobs/{job_id}/status")
 async def get_job_status_with_auth(
     job_id: str,
-    current_user: User = Depends(get_current_verified_user),
+    current_user = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """Get job status and results - simplified version"""
